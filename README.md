@@ -5,7 +5,7 @@
 
 An automatic check animation generation tool for visually reviewing character rig skinning, range of motion, and rig behavior in Maya.
 
-![defQA UI](docs/src/defQA_ui_01.png)
+<img src="docs/src/defQA_ui_01.png" alt="defQA UI" width="50%">
 
 
 ## Description

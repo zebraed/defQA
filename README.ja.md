@@ -4,7 +4,7 @@
 
 Maya上でキャラクターリグのスキニング・可動範囲・リグ挙動を目視確認するためのチェック用アニメーション自動生成ツールです。
 
-![defQA UI](docs/src/defQA_ui_01.png)
+<img src="docs/src/defQA_ui_01.png" alt="defQA UI" width="50%">
 
 ## 説明
 
