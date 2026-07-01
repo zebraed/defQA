@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <title>nurbsCurve</title>
+  <path fill="none" stroke="#6DBF6D" stroke-width="1.5" stroke-linecap="round"
+        d="M2,12 C4,4 8,4 10,8 S13,12 14,4"/>
+</svg>

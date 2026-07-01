@@ -1,0 +1,93 @@
+global proc string defQA_getInstallMelPath()
+{
+    string $info = `whatIs "defQA_install"`;
+    string $prefix = "Mel procedure found in: ";
+    int $isFound = `gmatch $info ($prefix + "*")`;
+
+    if (!$isFound) {
+        return "";
+    }
+
+    int $start = `size $prefix` + 1;
+    int $end = `size $info`;
+    return `substring $info $start $end`;
+}
+
+global proc defQA_install()
+{
+    global string $gShelfTopLevel;
+
+    string $installMelPath = `defQA_getInstallMelPath`;
+    if ($installMelPath == "") {
+        confirmDialog
+            -title "defQA Install"
+            -message "Could not find drag-and-drop-install.mel path. Please source drag-and-drop-install.mel from disk and try again."
+            -button "OK"
+            -icon "critical";
+        return;
+    }
+
+    string $packageRoot = `dirname $installMelPath`;
+    $packageRoot = `substituteAllString $packageRoot "\\" "/"`;
+
+    string $currentShelf = `tabLayout -query -selectTab $gShelfTopLevel`;
+
+    string $confirm = `confirmDialog
+        -title "defQA Install"
+        -message ("Install defQA shelf button on shelf: " + $currentShelf + "?")
+        -button "Install"
+        -button "Cancel"
+        -defaultButton "Install"
+        -cancelButton "Cancel"
+        -dismissString "Cancel"
+        -icon "question"`;
+
+    if ($confirm != "Install") {
+        return;
+    }
+
+    string $children[] = `shelfLayout -query -childArray $currentShelf`;
+    for ($child in $children) {
+        if (`objectTypeUI $child` != "shelfButton") {
+            continue;
+        }
+
+        string $annotation = `shelfButton -query -annotation $child`;
+        if ($annotation == "Open defQA") {
+            deleteUI $child;
+        }
+    }
+
+    string $command =
+        "import sys\n"
+        + "package_root = r\"" + $packageRoot + "\"\n"
+        + "if package_root not in sys.path:\n"
+        + "    sys.path.insert(0, package_root)\n"
+        + "import def_qa\n"
+        + "def_qa.showUI()\n";
+
+    string $iconPath = $packageRoot + "/def_qa/ui/icons/defqa_icon.svg";
+
+    if (`filetest -f $iconPath`) {
+        shelfButton
+            -parent $currentShelf
+            -label "defQA"
+            -annotation "Open defQA"
+            -image1 $iconPath
+            -sourceType "python"
+            -command $command;
+    } else {
+        shelfButton
+            -parent $currentShelf
+            -label "defQA"
+            -imageOverlayLabel "defQA"
+            -annotation "Open defQA"
+            -image1 "commandButton.png"
+            -sourceType "python"
+            -command $command;
+    }
+
+    saveAllShelves $gShelfTopLevel;
+}
+
+defQA_install();

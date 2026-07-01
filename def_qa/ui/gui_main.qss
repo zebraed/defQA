@@ -1,0 +1,57 @@
+QFrame#frame_attr_filter,
+QFrame#frame_generate_options {
+    border-top: 1px solid #3a3a3a;
+    background: transparent;
+}
+
+QTreeView#tree_controllers,
+QTableView#table_attrs {
+    selection-background-color: #d75e1d;
+    selection-color: #ffffff;
+}
+
+QTreeView#tree_controllers::item:selected,
+QTableView#table_attrs::item:selected {
+    background-color: #d75e1d;
+    color: #ffffff;
+}
+
+QPushButton#btn_generate {
+    background-color: #4a6741;
+    color: #e0e0e0;
+    border: 1px solid #5a7a50;
+    border-radius: 3px;
+    padding: 3px 10px;
+    min-width: 70px;
+}
+
+QPushButton#btn_generate:hover {
+    background-color: #5a7a50;
+}
+
+QPushButton#btn_generate:pressed {
+    background-color: #3a5732;
+}
+
+QPushButton#btn_delete {
+    background-color: #614141;
+    color: #e0e0e0;
+    border: 1px solid #7a5050;
+    border-radius: 3px;
+    padding: 3px 10px;
+    min-width: 70px;
+}
+
+QPushButton#btn_delete:hover {
+    background-color: #7a5050;
+}
+
+QPushButton#btn_delete:pressed {
+    background-color: #4a3232;
+}
+
+QPushButton#btn_delete:disabled {
+    background-color: #3a3a3a;
+    color: #666666;
+    border: 1px solid #444444;
+}

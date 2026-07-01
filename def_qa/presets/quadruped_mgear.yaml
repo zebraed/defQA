@@ -1,0 +1,204 @@
+template: quadruped_mgear
+version: 0.1.0
+
+timeline:
+  start_frame: 1
+  default_span: 8
+  gap_frame: 4
+  part_gap_frame: 10
+  return_to_neutral: true
+
+options:
+  use_animation_layer: false
+  animation_layer_name: defQA_anim_layer
+  create_time_slider_bookmarks: false
+  enable_translate: true
+  enable_rotate: true
+  enable_scale: false
+
+pair_rules:
+  - left: "_L_"
+    right: "_R_"
+  - left: "_L0_"
+    right: "_R0_"
+  - left: "_L"
+    right: "_R"
+
+parts:
+  root_cog:
+    pair_mode: single
+    patterns:
+      - "*global_C0_ctl*"
+      - "*local_C0_ctl*"
+      - "*body_C0_ctl*"
+    tests:
+      rotateX:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateY:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateZ:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+
+  spine:
+    pair_mode: single
+    patterns:
+      - "*spine_C*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateY:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateZ:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+
+  neck_head:
+    pair_mode: single
+    patterns:
+      - "*neck_C*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 45, 0, -45, 0]
+        span: 8
+      rotateY:
+        values: [0, 45, 0, -45, 0]
+        span: 8
+      rotateZ:
+        values: [0, 45, 0, -45, 0]
+        span: 8
+
+  shoulders:
+    pair_mode: pair_same
+    left_patterns:
+      - "*shoulder_L*_ctl*"
+    right_patterns:
+      - "*shoulder_R*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateY:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateZ:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+
+  front_legs:
+    pair_mode: pair_same
+    left_patterns:
+      - "*legFront_L*_fk*_ctl*"
+      - "*legFront_L*_upv_ctl*"
+      - "*legFront_L*_roll_ctl*"
+    right_patterns:
+      - "*legFront_R*_fk*_ctl*"
+      - "*legFront_R*_upv_ctl*"
+      - "*legFront_R*_roll_ctl*"
+    tests:
+      rotateX:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateY:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateZ:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+
+  front_feet:
+    pair_mode: pair_same
+    left_patterns:
+      - "*legFront_L*_ik_ctl*"
+      - "*footFront_L*_ctl*"
+    right_patterns:
+      - "*legFront_R*_ik_ctl*"
+      - "*footFront_R*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateY:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateZ:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+
+  back_legs:
+    pair_mode: pair_same
+    left_patterns:
+      - "*legBack_L*_fk*_ctl*"
+      - "*legBack_L*_upv_ctl*"
+      - "*legBack_L*_roll_ctl*"
+    right_patterns:
+      - "*legBack_R*_fk*_ctl*"
+      - "*legBack_R*_upv_ctl*"
+      - "*legBack_R*_roll_ctl*"
+    tests:
+      rotateX:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateY:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateZ:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+
+  back_feet:
+    pair_mode: pair_same
+    left_patterns:
+      - "*legBack_L*_ik_ctl*"
+      - "*footBack_L*_ctl*"
+    right_patterns:
+      - "*legBack_R*_ik_ctl*"
+      - "*footBack_R*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateY:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+      rotateZ:
+        values: [0, 90, 0, -90, 0]
+        span: 8
+
+  tail:
+    pair_mode: single
+    patterns:
+      - "*tail_C*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 45, 0, -45, 0]
+        span: 8
+      rotateY:
+        values: [0, 45, 0, -45, 0]
+        span: 8
+      rotateZ:
+        values: [0, 45, 0, -45, 0]
+        span: 8
+
+  face:
+    pair_mode: single
+    muted: true
+    patterns:
+      - "*eye_L*_ctl*"
+      - "*eye_R*_ctl*"
+      - "*eyeslook_C*_ctl*"
+      - "*mouth_C*_ctl*"
+    tests:
+      rotateX:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateY:
+        values: [0, 30, 0, -30, 0]
+        span: 8
+      rotateZ:
+        values: [0, 30, 0, -30, 0]
+        span: 8
