@@ -4,7 +4,7 @@ __author__ = "zebraed"
 __status__ = "stable"
 __license__ = "MIT"
 __copyright__ = "Copyright 2026 zebraed"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 from .run import generate, delete

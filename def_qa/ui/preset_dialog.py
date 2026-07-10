@@ -12,6 +12,8 @@ from ..core.template_loader import (
 
 NEW_TEMPLATE_ENTRY = "New Template..."
 NEW_OVERRIDE_ENTRY = "New Override..."
+DEFAULT_TEMPLATE_ENTRY = "(Default)"
+NO_OVERRIDE_ENTRY = "(No Override)"
 
 
 class PresetDialog(QtWidgets.QDialog):
@@ -38,8 +40,15 @@ class PresetDialog(QtWidgets.QDialog):
 
         if preset_name:
             self.combo_preset.setCurrentText(preset_name)
+        else:
+            self.combo_preset.setCurrentText(DEFAULT_TEMPLATE_ENTRY)
+
         if override_name:
             self.combo_override.setCurrentText(override_name)
+        else:
+            self.combo_override.setCurrentText(NO_OVERRIDE_ENTRY)
+
+        self._set_committed_selection()
 
     def _setup_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
@@ -100,7 +109,7 @@ class PresetDialog(QtWidgets.QDialog):
 
         self.btn_ok = QtWidgets.QPushButton("OK")
         self.btn_cancel = QtWidgets.QPushButton("Cancel")
-        self.btn_ok.clicked.connect(self.accept)
+        self.btn_ok.clicked.connect(self._on_ok_clicked)
         self.btn_cancel.clicked.connect(self.reject)
 
         button_policy = QtWidgets.QSizePolicy(
@@ -125,24 +134,30 @@ class PresetDialog(QtWidgets.QDialog):
         self.combo_preset.blockSignals(True)
         current = self.combo_preset.currentText()
         self.combo_preset.clear()
-        self.combo_preset.addItem("")
+        self.combo_preset.addItem(DEFAULT_TEMPLATE_ENTRY)
         for name in sorted(list_presets()):
             self.combo_preset.addItem(name)
         self.combo_preset.addItem(NEW_TEMPLATE_ENTRY)
-        if current:
-            self.combo_preset.setCurrentText(current)
+        normalized = self._normalize_combo_name(current)
+        if normalized:
+            self.combo_preset.setCurrentText(normalized)
+        else:
+            self.combo_preset.setCurrentText(DEFAULT_TEMPLATE_ENTRY)
         self.combo_preset.blockSignals(False)
 
     def _populate_overrides(self):
         self.combo_override.blockSignals(True)
         current = self.combo_override.currentText()
         self.combo_override.clear()
-        self.combo_override.addItem("")
+        self.combo_override.addItem(NO_OVERRIDE_ENTRY)
         for name in sorted(list_overrides()):
             self.combo_override.addItem(name)
         self.combo_override.addItem(NEW_OVERRIDE_ENTRY)
-        if current:
-            self.combo_override.setCurrentText(current)
+        normalized = self._normalize_combo_name(current)
+        if normalized:
+            self.combo_override.setCurrentText(normalized)
+        else:
+            self.combo_override.setCurrentText(NO_OVERRIDE_ENTRY)
         self.combo_override.blockSignals(False)
 
     def _is_new_template_entry(self, name):
@@ -157,11 +172,30 @@ class PresetDialog(QtWidgets.QDialog):
             or self._is_new_override_entry(name)
         )
 
+    def _is_reserved_combo_label(self, name):
+        text = name.strip()
+        if text in (DEFAULT_TEMPLATE_ENTRY, NO_OVERRIDE_ENTRY):
+            return True
+        return self._is_new_entry(text)
+
     def _normalize_combo_name(self, name):
         text = name.strip()
-        if not text or self._is_new_entry(text):
+        if not text or self._is_reserved_combo_label(text):
             return ""
         return text
+
+    def _set_committed_selection(self):
+        """最後にLoadした、またはダイアログを開いた時点の選択を記録する"""
+        self._committed_preset_name = self.get_preset_name()
+        self._committed_override_name = self.get_override_name()
+
+    def _is_selection_dirty(self):
+        """コンボ選択が最後にLoadした状態から変わっているか"""
+        if self.get_preset_name() != self._committed_preset_name:
+            return True
+        if self.get_override_name() != self._committed_override_name:
+            return True
+        return False
 
     def _apply_preset_timeline(self, preset):
         """プリセットのタイムライン設定をスピンへ反映する"""
@@ -207,11 +241,11 @@ class PresetDialog(QtWidgets.QDialog):
         name = name.strip()
         if not name:
             return None
-        if self._is_new_entry(name):
+        if self._is_reserved_combo_label(name):
             QtWidgets.QMessageBox.warning(
                 self,
                 "Save Preset",
-                "New Template... / New Override... cannot be used as preset names",
+                "Reserved preset labels cannot be used as preset names",
             )
             return None
         return name
@@ -282,13 +316,13 @@ class PresetDialog(QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(self, "Save Preset", str(exc))
 
     def _on_save_preset(self):
-        override_name = self.combo_override.currentText().strip()
-        template_name = self.combo_preset.currentText().strip()
+        override_name = self.get_override_name()
+        template_name = self.get_preset_name()
 
-        if self._is_new_override_entry(override_name):
+        if self._is_new_override_entry(self.combo_override.currentText()):
             self._save_new_override()
             return
-        if self._is_new_template_entry(template_name):
+        if self._is_new_template_entry(self.combo_preset.currentText()):
             self._save_new_template()
             return
 
@@ -367,8 +401,8 @@ class PresetDialog(QtWidgets.QDialog):
         lines = [
             "Preset loaded.",
             "",
-            f"Template: {template_name or '(default)'}",
-            f"Override: {override_name or '(none)'}",
+            f"Template: {template_name or DEFAULT_TEMPLATE_ENTRY}",
+            f"Override: {override_name or NO_OVERRIDE_ENTRY}",
             "",
             f"Start Frame: {tl.get('start_frame', 1)}",
             f"Default Span: {tl.get('default_span', 8)}",
@@ -378,21 +412,22 @@ class PresetDialog(QtWidgets.QDialog):
         ]
         return "\n".join(lines)
 
-    def _on_load_preset(self):
+    def _load_and_apply_preset(self, show_message=True):
+        """選択中のプリセットを読み込み、親ウィンドウへ反映する"""
         if self._is_new_template_entry(self.combo_preset.currentText()):
             QtWidgets.QMessageBox.warning(
                 self,
                 "Load Preset",
                 f"{NEW_TEMPLATE_ENTRY} cannot be loaded",
             )
-            return
+            return False
         if self._is_new_override_entry(self.combo_override.currentText()):
             QtWidgets.QMessageBox.warning(
                 self,
                 "Load Preset",
                 f"{NEW_OVERRIDE_ENTRY} cannot be loaded",
             )
-            return
+            return False
 
         preset_name = self._normalize_combo_name(self.combo_preset.currentText())
         override_name = self._normalize_combo_name(self.combo_override.currentText())
@@ -402,7 +437,7 @@ class PresetDialog(QtWidgets.QDialog):
                 "Load Preset",
                 "Select a template or override",
             )
-            return
+            return False
 
         preset = self._load_selected_preset()
         if preset is None:
@@ -411,15 +446,63 @@ class PresetDialog(QtWidgets.QDialog):
                 "Load Preset",
                 "Failed to load preset",
             )
-            return
+            return False
 
         self._apply_preset_timeline(preset)
         self._sync_loaded_preset_to_parent(preset)
-        QtWidgets.QMessageBox.information(
-            self,
-            "Load Preset",
-            self._format_loaded_preset_message(preset),
+        self._set_committed_selection()
+        if show_message:
+            QtWidgets.QMessageBox.information(
+                self,
+                "Load Preset",
+                self._format_loaded_preset_message(preset),
+            )
+        return True
+
+    def _on_load_preset(self):
+        self._load_and_apply_preset(show_message=True)
+
+    def _confirm_close_without_load(self):
+        """Load未実行のままOKを押した場合の確認ダイアログ"""
+        box = QtWidgets.QMessageBox(self)
+        box.setIcon(QtWidgets.QMessageBox.Question)
+        box.setWindowTitle("Preset Not Loaded")
+        box.setText("Template or override selection was changed.")
+        box.setInformativeText(
+            "Load Preset was not pressed. Load the selected preset before closing?"
         )
+        btn_load_close = box.addButton(
+            "Load & Close",
+            QtWidgets.QMessageBox.AcceptRole,
+        )
+        btn_close = box.addButton(
+            "Close Anyway",
+            QtWidgets.QMessageBox.DestructiveRole,
+        )
+        btn_cancel = box.addButton(QtWidgets.QMessageBox.Cancel)
+        box.exec_()
+
+        clicked = box.clickedButton()
+        if clicked is btn_cancel:
+            return "cancel"
+        if clicked is btn_load_close:
+            return "load"
+        if clicked is btn_close:
+            return "close"
+        return "cancel"
+
+    def _on_ok_clicked(self):
+        if not self._is_selection_dirty():
+            self.accept()
+            return
+
+        action = self._confirm_close_without_load()
+        if action == "cancel":
+            return
+        if action == "load":
+            if not self._load_and_apply_preset(show_message=False):
+                return
+        self.accept()
 
     def get_preset_name(self):
         return self._normalize_combo_name(self.combo_preset.currentText())
