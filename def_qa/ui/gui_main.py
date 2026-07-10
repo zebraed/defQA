@@ -40,6 +40,7 @@ from .controller_tree_model import ControllerTreeModel
 from .attr_table_model import AttrTableModel, COL_PAIR
 from .check_box_header import CheckBoxHeaderView
 from .pair_mode_delegate import PairModeDelegate
+from .empty_state_view import EmptyStateView
 
 
 DIR_NAME = os.path.dirname(__file__)
@@ -83,6 +84,7 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self.btn_scan: Optional[QtWidgets.QPushButton] = None
         self.splitter: Optional[QtWidgets.QSplitter] = None
         self.tree_controllers: Optional[QtWidgets.QTreeView] = None
+        self._controller_view: Optional[EmptyStateView] = None
         self.table_attrs: Optional[QtWidgets.QTableView] = None
         self._attr_header: Optional[CheckBoxHeaderView] = None
         self.chk_rotate: Optional[QtWidgets.QCheckBox] = None
@@ -212,6 +214,19 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
             QtWidgets.QHeaderView.Stretch
         )
 
+        if self.splitter is not None:
+            splitter_index = self.splitter.indexOf(self.tree_controllers)
+            self.tree_controllers.setParent(None)
+            self._controller_view = EmptyStateView(
+                self.tree_controllers,
+                (
+                    "No controllers loaded.\n"
+                    "Enter a controller set and click Scan to get started."
+                ),
+            )
+            self.splitter.insertWidget(splitter_index, self._controller_view)
+        self._update_controller_empty_state()
+
         hh = CheckBoxHeaderView(check_column=0, parent=self.table_attrs)
         self._attr_header = hh
         self.table_attrs.setHorizontalHeader(hh)
@@ -234,6 +249,13 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self.setCentralWidget(central)
 
         self._apply_qss()
+
+    def _update_controller_empty_state(self):
+        """Controller Viewの空状態オーバーレイ表示を更新する"""
+        if self._controller_view is None:
+            return
+        empty = not self._ctrl_model.get_controllers()
+        self._controller_view.set_empty_visible(empty)
 
     def create_menu_bar(self, root_layout: QtWidgets.QBoxLayout) -> None:
         menubar = QtWidgets.QMenuBar(self)
@@ -438,6 +460,7 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         ]
 
         self._ctrl_model.set_controllers(ctrl_items)
+        self._update_controller_empty_state()
         self.tree_controllers.expandAll()
         if ctrl_items:
             self.tree_controllers.setCurrentIndex(self._ctrl_model.index(0, 0))
