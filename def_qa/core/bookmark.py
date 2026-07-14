@@ -32,8 +32,8 @@ def create_bookmarks_from_targets(metadata_targets, template=None, existing_book
 
     Args:
         metadata_targets: build_animationが返すtargetsリスト
-        template: 後方互換のため受け取る（未使用）
-        existing_bookmarks: 既存Bookmarkノード名リスト（名前重複回避用）
+        template: 未使用
+        existing_bookmarks: 既存Bookmarkノード名リスト
 
     Returns:
         list: 作成したtimeSliderBookmarkノード名

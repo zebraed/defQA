@@ -231,6 +231,27 @@ def _load_yaml_file(path):
     return data
 
 
+_MUTE_KEYS = ("muted", "muted_patterns")
+
+
+def _merge_part_mute_fields(merged_part, override_part):
+    """Override側のMute定義でベース側のMute状態を置き換える"""
+    if not any(key in override_part for key in _MUTE_KEYS):
+        return
+
+    if "muted" in override_part:
+        merged_part["muted"] = copy.deepcopy(override_part["muted"])
+    else:
+        merged_part.pop("muted", None)
+
+    if "muted_patterns" in override_part:
+        merged_part["muted_patterns"] = copy.deepcopy(
+            override_part["muted_patterns"]
+        )
+    else:
+        merged_part.pop("muted_patterns", None)
+
+
 def _merge_parts(base_parts, override_parts):
     """partsセクションを部位単位でマージする"""
     merged = copy.deepcopy(base_parts)
@@ -240,6 +261,7 @@ def _merge_parts(base_parts, override_parts):
             continue
         if isinstance(part_data, dict) and isinstance(merged[part_name], dict):
             merged[part_name] = merge_presets(merged[part_name], part_data)
+            _merge_part_mute_fields(merged[part_name], part_data)
         else:
             merged[part_name] = copy.deepcopy(part_data)
     return merged
