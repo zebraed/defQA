@@ -28,3 +28,15 @@ class PairModeDelegate(QtWidgets.QStyledItemDelegate):
     def displayText(self, value, locale):
         mode = normalize_pair_mode(value)
         return PAIR_MODE_LABELS.get(mode, mode)
+
+    def sizeHint(self, option, index):
+        hint = super().sizeHint(option, index)
+        metrics = option.fontMetrics
+        label_widths = []
+        for label in PAIR_MODE_LABELS.values():
+            if hasattr(metrics, "horizontalAdvance"):
+                label_widths.append(metrics.horizontalAdvance(label))
+            else:
+                label_widths.append(metrics.width(label))
+        hint.setWidth(max(label_widths) + 28)
+        return hint

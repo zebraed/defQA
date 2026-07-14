@@ -190,6 +190,18 @@ class AttrTableModel(QtCore.QAbstractTableModel):
 
         return False
 
+    def refresh_pair_column(self):
+        """Pair列の表示を再描画する"""
+        if not self._items:
+            return
+        top_left = self.index(0, _COL_PAIR)
+        bottom_right = self.index(len(self._items) - 1, _COL_PAIR)
+        self.dataChanged.emit(
+            top_left,
+            bottom_right,
+            [QtCore.Qt.DisplayRole],
+        )
+
     def flags(self, index):
         if not index.isValid():
             return QtCore.Qt.NoItemFlags
