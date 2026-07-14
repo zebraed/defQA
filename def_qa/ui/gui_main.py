@@ -16,7 +16,11 @@ from maya import OpenMayaUI as omui
 from .qt_compat import QtWidgets, QtCore, QtGui, QtUiTools, wrapInstance, QAction
 from ..core.scanner import scan_controller_set
 from ..core.template_loader import load_preset, get_preset_path, get_override_path
-from ..core.preset_builder import build_parts_from_controllers, is_controller_muted
+from ..core.preset_builder import (
+    build_parts_from_controllers,
+    is_controller_muted,
+    is_unassigned_part,
+)
 from ..core.animation_layer import setup_generation_layer
 from ..core.animation_builder import (
     capture_initial_values,
@@ -238,7 +242,8 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         hh.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         hh.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         hh.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
-        hh.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(COL_PAIR, QtWidgets.QHeaderView.Interactive)
+        hh.resizeSection(COL_PAIR, 80)
         self.table_attrs.verticalHeader().setVisible(False)
 
         central = QtWidgets.QWidget(self)
@@ -498,14 +503,45 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         self._attr_header.set_master_check_state(all_enabled, any_enabled)
 
     def _on_attr_table_data_changed(self, top_left, bottom_right, roles):
-        """個別Check変更時にマスターチェック表示を更新する"""
-        if not roles:
+        """Attrテーブル編集時の連動処理"""
+        if roles and QtCore.Qt.CheckStateRole in roles:
+            if top_left.column() == 0:
+                self._sync_attr_master_checkbox()
             return
-        if QtCore.Qt.CheckStateRole not in roles:
+
+        if roles and QtCore.Qt.EditRole not in roles:
             return
-        if top_left.column() != 0:
+
+        if top_left.column() == COL_PAIR:
+            self._propagate_pair_mode(top_left.row())
+
+    def _propagate_pair_mode(self, row):
+        """Pair変更を同Partの全Attr / 全コントローラへ伝播する"""
+        attrs = self._attr_model.get_attrs()
+        if row < 0 or row >= len(attrs):
             return
-        self._sync_attr_master_checkbox()
+
+        edited = attrs[row]
+        part_name = edited.part
+        mode = edited.pair_mode
+
+        # Part未設定は選択中コントローラ内の全Attrへ伝播
+        if not part_name:
+            for attr_item in attrs:
+                attr_item.pair_mode = mode
+            self._attr_model.refresh_pair_column()
+            return
+
+        for attr_item in attrs:
+            if attr_item.part == part_name:
+                attr_item.pair_mode = mode
+
+        for ctrl_item in self._ctrl_model.get_controllers():
+            for attr_item in ctrl_item.attrs:
+                if attr_item.part == part_name:
+                    attr_item.pair_mode = mode
+
+        self._attr_model.refresh_pair_column()
 
     def _on_controller_selection_changed(self, _selected, _deselected):
         if self._syncing_selection:
@@ -535,9 +571,7 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
             self.line_preset.setText(dlg.get_preset_name())
             self.line_override.setText(dlg.get_override_name())
             self._timeline_overrides = dlg.get_timeline_settings()
-            if self._ctrl_model.get_controllers():
-                preset = self._load_current_preset()
-                self._apply_preset_to_controllers(preset)
+            # プリセット反映はLoad / Load&Closeでのみ行う
             self._refresh_preset_cache()
 
     def export_preset_for_save(self, timeline_settings=None):
@@ -1200,18 +1234,21 @@ def _get_part_side_pair(node, preset):
     parts = preset.get("parts", {})
     for part_name, part_data in parts.items():
         pair_mode = part_data.get("pair_mode", "single")
+        display_part_name = part_name
+        if is_unassigned_part(part_name):
+            display_part_name = ""
 
         left_patterns = part_data.get("left_patterns", [])
         if match_any_pattern(node, left_patterns):
-            return part_name, "L", pair_mode
+            return display_part_name, "L", pair_mode
 
         right_patterns = part_data.get("right_patterns", [])
         if match_any_pattern(node, right_patterns):
-            return part_name, "R", pair_mode
+            return display_part_name, "R", pair_mode
 
         patterns = part_data.get("patterns", [])
         if match_any_pattern(node, patterns):
-            return part_name, _infer_side_from_name(node), pair_mode
+            return display_part_name, _infer_side_from_name(node), pair_mode
 
     return "", _infer_side_from_name(node), "single"
 

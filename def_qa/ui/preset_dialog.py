@@ -280,9 +280,38 @@ class PresetDialog(QtWidgets.QDialog):
             path = save_preset(preset, name, as_override=False)
             self._populate_presets()
             self.combo_preset.setCurrentText(name)
+            self._sync_names_to_parent()
+            self._set_committed_selection()
             QtWidgets.QMessageBox.information(self, "Save Preset", f"Saved:\n{path}")
         except Exception as exc:
             QtWidgets.QMessageBox.warning(self, "Save Preset", str(exc))
+
+    def _build_override_preset(self, full_preset, template_name, override_name):
+        """フルプリセットからoverride用dictを組み立てる"""
+        return {
+            "extends": template_name,
+            "template": override_name,
+            "version": full_preset.get("version", "0.1.0"),
+            "timeline": full_preset.get(
+                "timeline",
+                self.get_timeline_settings(),
+            ),
+            "parts": full_preset.get("parts", {}),
+        }
+
+    def _sync_names_to_parent(self):
+        """保存したTemplate/Override名を親の表示欄へ反映する"""
+        parent = self.parent()
+        if parent is None:
+            return
+
+        line_preset = getattr(parent, "line_preset", None)
+        if line_preset is not None:
+            line_preset.setText(self.get_preset_name())
+
+        line_override = getattr(parent, "line_override", None)
+        if line_override is not None:
+            line_override.setText(self.get_override_name())
 
     def _save_new_override(self):
         template_name = self._normalize_combo_name(self.combo_preset.currentText())
@@ -299,18 +328,14 @@ class PresetDialog(QtWidgets.QDialog):
             return
 
         full_preset = self._build_preset_for_save()
-        preset = {
-            "extends": template_name,
-            "template": name,
-            "version": full_preset.get("version", "0.1.0"),
-            "timeline": full_preset.get("timeline", self.get_timeline_settings()),
-            "parts": full_preset.get("parts", {}),
-        }
+        preset = self._build_override_preset(full_preset, template_name, name)
 
         try:
             path = save_preset(preset, name, as_override=True)
             self._populate_overrides()
             self.combo_override.setCurrentText(name)
+            self._sync_names_to_parent()
+            self._set_committed_selection()
             QtWidgets.QMessageBox.information(self, "Save Preset", f"Saved:\n{path}")
         except Exception as exc:
             QtWidgets.QMessageBox.warning(self, "Save Preset", str(exc))
@@ -326,7 +351,7 @@ class PresetDialog(QtWidgets.QDialog):
             self._save_new_template()
             return
 
-        preset = self._build_preset_for_save()
+        full_preset = self._build_preset_for_save()
         loaded = self._load_selected_preset()
         if loaded is None and self._export_preset is None:
             QtWidgets.QMessageBox.warning(
@@ -353,6 +378,23 @@ class PresetDialog(QtWidgets.QDialog):
             )
             as_override = answer == QtWidgets.QMessageBox.Yes
 
+        if as_override:
+            if not template_name:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Save Preset",
+                    "Select a template before saving an override",
+                )
+                return
+            preset = self._build_override_preset(
+                full_preset,
+                template_name,
+                name,
+            )
+        else:
+            preset = full_preset
+            preset["template"] = name
+
         try:
             path = save_preset(preset, name, as_override=as_override)
             if as_override:
@@ -361,6 +403,8 @@ class PresetDialog(QtWidgets.QDialog):
             else:
                 self._populate_presets()
                 self.combo_preset.setCurrentText(name)
+            self._sync_names_to_parent()
+            self._set_committed_selection()
             QtWidgets.QMessageBox.information(self, "Save Preset", f"Saved:\n{path}")
         except Exception as exc:
             QtWidgets.QMessageBox.warning(self, "Save Preset", str(exc))
