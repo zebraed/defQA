@@ -930,7 +930,6 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
         override_path = get_override_path(override_name) if override_name else None
         return load_preset(preset_path, override_path=override_path)
 
-
     def _get_optionvar_key(self) -> str:
         return getattr(self.__class__, "optionvar_key", None) \
             or f"{self.__class__.__name__}_settings"
