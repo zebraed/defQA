@@ -1,5 +1,6 @@
 """defQA メインウィンドウ"""
 import copy
+import importlib
 import json
 import os
 import platform
@@ -1152,22 +1153,24 @@ class DefQAMainWindow(MayaQWidgetBaseMixin, QtWidgets.QMainWindow):
     def _get_about_module(self):
         """About表示用のパッケージモジュールを返す"""
         tool_name = self.__class__.__module__.split(".", maxsplit=1)[0]
-        pkg = sys.modules.get(tool_name)
-        if pkg is not None:
+        try:
+            pkg = importlib.import_module(tool_name)
             return tool_name, pkg
+        except ImportError:
+            pass
         pkg = sys.modules.get(self.__class__.__module__)
         if pkg is not None:
             return tool_name, pkg
         return tool_name, None
 
     def _show_about_dialog(self) -> None:
-        """About...ダイアログを表示する"""
+        """Aboutダイアログを表示する"""
         tool_name, pkg = self._get_about_module()
-        author = getattr(pkg, "__author__", "")
-        copyright_ = getattr(pkg, "__copyright__", "")
-        email = getattr(pkg, "__email__", "")
-        status = getattr(pkg, "__status__", "")
-        version = getattr(pkg, "__version__", "")
+        author = getattr(pkg, "__author__", "") if pkg is not None else ""
+        copyright_ = getattr(pkg, "__copyright__", "") if pkg is not None else ""
+        email = getattr(pkg, "__email__", "") if pkg is not None else ""
+        status = getattr(pkg, "__status__", "") if pkg is not None else ""
+        version = getattr(pkg, "__version__", "") if pkg is not None else ""
 
         lines = [
             f"{tool_name}  v{version}",

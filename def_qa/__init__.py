@@ -1,6 +1,7 @@
 """defQA - Deformation QA Animation Generator"""
 
 __author__ = "zebraed"
+__email__ = "contact@sarygamysh.com"
 __status__ = "stable"
 __license__ = "MIT"
 __copyright__ = "Copyright 2026 zebraed"
