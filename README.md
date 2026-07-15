@@ -1,5 +1,8 @@
-# defQA
+<p align="center">
+  <img src="def_qa/ui/icons/defqa_icon.svg" alt="defQA" width="96">
+</p>
 
+# defQA
 
 [日本語版](README.ja.md)
 
